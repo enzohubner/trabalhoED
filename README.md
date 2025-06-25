@@ -1,6 +1,6 @@
 # Sistema de Consulta de Pacientes
 
-Este projeto é um sistema simples em C para gerenciamento e consulta de dados de pacientes, utilizando como base um arquivo CSV. O sistema permite buscar pacientes por nome ou CPF e listar todos os pacientes cadastrados.
+Este projeto é um sistema simples em C para gerenciamento e consulta de dados de pacientes, utilizando uma lista ligada (LinkedList) e persistência em arquivo CSV. O sistema permite inserir, consultar, atualizar, remover e listar pacientes.
 
 ---
 
@@ -9,9 +9,10 @@ Este projeto é um sistema simples em C para gerenciamento e consulta de dados d
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Como Executar o Programa](#como-executar-o-programa)
 - [Principais TADs (Tipos Abstratos de Dados)](#principais-tads-tipos-abstratos-de-dados)
-- [Principais Decisões de Implementação](#principais-decisoes-de-implementacao)
+- [Funcionalidades Implementadas](#funcionalidades-implementadas)
 - [Exemplo de Formato do CSV](#exemplo-de-formato-do-csv)
 - [Autores](#autores)
+- [Observações](#observações)
 
 ---
 
@@ -20,7 +21,7 @@ Este projeto é um sistema simples em C para gerenciamento e consulta de dados d
 ```
 .
 ├── main.c              # Arquivo principal com o menu e a lógica principal
-├── bdpaciente.c        # Funções auxiliares para leitura e consulta de dados
+├── bdpaciente.c        # Funções auxiliares para leitura e manipulação dos dados
 ├── bdpaciente.h        # Arquivo de cabeçalho com as definições dos TADs e funções
 ├── bd_paciente.csv     # Base de dados com os pacientes (formato CSV)
 ├── Makefile            # Automação da compilação do projeto
@@ -34,7 +35,7 @@ Este projeto é um sistema simples em C para gerenciamento e consulta de dados d
 ### 1. Pré-requisitos
 
 - GCC (ou outro compilador C compatível)
-- Sistema operacional Windows (ou Linux, adaptando o comando de limpeza de tela)
+- Sistema operacional Windows ou Linux (ajuste o comando de limpeza de tela se necessário)
 - Arquivo `bd_paciente.csv` no mesmo diretório do executável
 
 ### 2. Compilação
@@ -68,7 +69,7 @@ gcc main.c bdpaciente.c -o meu_programa
 
 ## 🏗️ Principais TADs (Tipos Abstratos de Dados)
 
-O projeto utiliza dois TADs principais, definidos em `bdpaciente.h`:
+O projeto utiliza os seguintes TADs, definidos em `bdpaciente.h`:
 
 ```c
 typedef struct {
@@ -79,14 +80,47 @@ typedef struct {
     char Data_Cadastro[11];
 } Paciente;
 
+typedef struct Node {
+    Paciente paciente;
+    struct Node *next;
+} Node;
+
 typedef struct {
-    Paciente pacientes[MAX_pacientes];
+    Node *head;
     int quantidade;
-} BDPaciente;
+} ListaPacientes;
 ```
 
-- **Paciente**: representa um paciente, com campos para ID, CPF, nome, idade e data de cadastro.
-- **BDPaciente**: representa a base de dados de pacientes, armazenando um vetor de pacientes e a quantidade cadastrada.
+---
+
+## ✅ Funcionalidades Implementadas
+./
+O sistema oferece as seguintes operações:
+
+- **Inserir paciente:**  
+  Permite cadastrar um novo paciente, preenchendo CPF, nome, idade e data de cadastro. O ID é gerado automaticamente.
+
+- **Consultar paciente:**  
+  - Por nome (busca parcial, insensível a maiúsculas/minúsculas)
+  - Por CPF (busca exata)
+
+- **Atualizar paciente:**  
+  Permite editar os dados de um paciente existente, informando o ID. É possível manter campos inalterados.
+
+- **Remover paciente:**  
+  Remove um paciente da lista, informando o ID.
+
+- **Listar todos os pacientes:**  
+  Exibe todos os pacientes cadastrados em formato de tabela.
+
+- **Persistência em arquivo:**  
+  Todas as alterações (inserção, remoção, atualização) são salvas no arquivo `bd_paciente.csv`.
+
+- **Validação de CPF:**  
+  O CPF deve conter exatamente 11 dígitos numéricos.
+
+- **Interface de menu:**  
+  Menu interativo no terminal para navegação entre as operações. Ele tambem foi modularizado e apenas chamado no Main.c
 
 ---
 
@@ -124,5 +158,9 @@ Disciplina: **Estrutura de Dados**
 
 ## 📌 Observações
 
-- A busca por nome e CPF é feita por prefixo. Para busca parcial em qualquer parte do nome ou CPF, pode-se substituir `strncmp` por `strstr`.
-- O sistema foi desenvolvido para fins didáticos e pode ser expandido com funcionalidades como adição, edição e remoção de pacientes.
+- A busca por nome é feita de forma parcial e insensível a maiúsculas/minúsculas.
+- O sistema utiliza lista ligada para armazenar os pacientes em memória.
+- O comando de limpeza de tela (`system("clear")`) pode ser alterado para `system("cls")` no Windows.
+- O sistema foi desenvolvido para fins didáticos e pode ser expandido com novas funcionalidades.
+
+
