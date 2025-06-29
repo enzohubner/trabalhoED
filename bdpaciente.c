@@ -60,20 +60,49 @@ void inserir_paciente_na_lista(ListaPacientes *lista, Paciente p)
     lista->quantidade++;
 }
 
+// Obtém o próximo ID sequencial para um novo paciente
+int obter_proximo_id(ListaPacientes *lista) 
+{
+    if (lista->head == NULL) {
+        return 1;
+    }
+
+    int maior_id = 0;
+    Node *atual = lista->head;
+    
+    while (atual != NULL) {
+        if (atual->paciente.ID > maior_id) {
+            maior_id = atual->paciente.ID;
+        }
+        atual = atual->next;
+    }
+    
+    return maior_id + 1;
+}
+
 // Interface para inserir um novo paciente via usuário
-void inserir_paciente(ListaPacientes *lista)
+int inserir_paciente(ListaPacientes *lista)
 {
     Paciente novoPaciente;
 
     // Gera um novo ID sequencial
-    novoPaciente.ID = lista->quantidade + 1;
+    novoPaciente.ID = obter_proximo_id(lista);
 
     printf("Digite o CPF do paciente: ");
     scanf(" %[^\n]", novoPaciente.CPF);
     limparQuebraLinha(novoPaciente.CPF);
     if (!valida_cpf(novoPaciente.CPF)) {
         printf("CPF inválido. Deve conter 11 dígitos numéricos.\n");
-        return;
+        return 0; 
+    }
+    
+    Node *atual = lista->head;
+    while (atual != NULL) {
+        if (strcmp(atual->paciente.CPF, novoPaciente.CPF) == 0) {
+            printf("CPF já existe no sistema. Operação cancelada.\n");
+            return 0;
+        }
+        atual = atual->next;
     }
 
     printf("Digite o nome do paciente: ");
@@ -95,38 +124,48 @@ void inserir_paciente(ListaPacientes *lista)
 
     if (tolower(confirmacao) != 's') {
         printf("Operação de inserção cancelada.\n");
-        return;
+        return 0; 
     }
 
     inserir_paciente_na_lista(lista, novoPaciente);
     printf("Paciente inserido com sucesso.\n");
+    return 1;
 }
 
 // Remove um paciente da lista pelo ID
-void remover_paciente(ListaPacientes *lista, int id) 
+int remover_paciente(ListaPacientes *lista, int id) 
 {
     Node *atual = lista->head;
     Node *anterior = NULL;
 
-    printf("Tem certeza que deseja remover o paciente com ID %d? (s/n): ", id);
+    // Busca o paciente pelo ID para mostrar seus dados
+    Node *temp = atual;
+    while (temp != NULL && temp->paciente.ID != id) {
+        temp = temp->next;
+    }
+
+    if (temp == NULL) {
+        printf("Paciente com ID %d não encontrado.\n", id);
+        return 0;
+    }
+
+    printf("Paciente encontrado:\n");
+    imprimir_cabecalho();
+    imprimir_paciente(temp->paciente);
+    
+    printf("\nTem certeza que deseja remover este paciente? (s/n): ");
     char confirmacao;
     scanf(" %c", &confirmacao);
 
     if (tolower(confirmacao) != 's') {
-        system("clear");
         printf("Operação de remoção cancelada.\n");
-        return;
+        return 0; 
     }
 
-    // Busca o paciente pelo ID
+    // Busca o paciente pelo ID novamente para remover
     while (atual != NULL && atual->paciente.ID != id) {
         anterior = atual;
         atual = atual->next;
-    }
-
-    if (atual == NULL) {
-        printf("Paciente com ID %d não encontrado.\n", id);
-        return;
     }
 
     printf("Paciente removido:\n");
@@ -141,6 +180,7 @@ void remover_paciente(ListaPacientes *lista, int id)
 
     free(atual);
     lista->quantidade--;
+    return 1;
 }
 
 // Lê os dados do arquivo CSV e carrega na lista
@@ -185,18 +225,18 @@ void guardar_dados(ListaPacientes *lista)
 }
 
 // Atualiza os dados de um paciente existente
-void atualizar_paciente(ListaPacientes *lista, Paciente p) 
+int atualizar_paciente(ListaPacientes *lista, int id) 
 {
     Node *atual = lista->head;
 
     // Busca o paciente pelo ID
-    while (atual != NULL && atual->paciente.ID != p.ID) {
+    while (atual != NULL && atual->paciente.ID != id) {
         atual = atual->next;
     }
 
     if (atual == NULL) {
-        printf("Paciente com ID %d não encontrado.\n", p.ID);
-        return;
+        printf("Paciente com ID %d não encontrado.\n", id);
+        return 0; // Paciente não encontrado
     }
 
     printf("Paciente encontrado:\n");
@@ -208,45 +248,73 @@ void atualizar_paciente(ListaPacientes *lista, Paciente p)
 
     if (tolower(confirmacao) != 's') {
         printf("Operação de edição cancelada.\n");
-        return;
+        return 0; 
     }
+
+    // Cria uma cópia
+    Paciente temp = atual->paciente;
 
     printf("Digite os novos dados do paciente (use '-' para manter o valor atual):\n");
 
     // Atualiza nome
-    printf("Nome atual: %s\nNovo nome: ", atual->paciente.Nome);
+    printf("Nome atual: %s\nNovo nome: ", temp.Nome);
     char novoNome[50];
     scanf(" %[^\n]", novoNome);
     if (strcmp(novoNome, "-") != 0) {
-        strcpy(atual->paciente.Nome, novoNome);
+        strcpy(temp.Nome, novoNome);
     }
 
     // Atualiza CPF
-    printf("CPF atual: %s\nNovo CPF: ", atual->paciente.CPF);
+    printf("CPF atual: %s\nNovo CPF: ", temp.CPF);
     char novoCPF[15];
     scanf(" %[^\n]", novoCPF);
     if (strcmp(novoCPF, "-") != 0) {
-        strcpy(atual->paciente.CPF, novoCPF);
+        if (!valida_cpf(novoCPF)) {
+            printf("CPF inválido. Operação cancelada.\n");
+            return 0;
+        }
+        // Verifica se o CPF já existe 
+        Node *verificacao = lista->head;
+        while (verificacao != NULL) {
+            if (verificacao->paciente.ID != id && strcmp(verificacao->paciente.CPF, novoCPF) == 0) {
+                printf("CPF já existe para outro paciente. Operação cancelada.\n");
+                return 0;
+            }
+            verificacao = verificacao->next;
+        }
+        
+        strcpy(temp.CPF, novoCPF);
     }
 
     // Atualiza idade
-    printf("Idade atual: %d\nNova idade: ", atual->paciente.Idade);
+    printf("Idade atual: %d\nNova idade: ", temp.Idade);
     int novaIdade;
     scanf("%d", &novaIdade);
     if (novaIdade != -1) {
-        atual->paciente.Idade = novaIdade;
+        temp.Idade = novaIdade;
     }
 
     // Atualiza data de cadastro
-    printf("Data de cadastro atual: %s\nNova data de cadastro: ", atual->paciente.Data_Cadastro);
+    printf("Data de cadastro atual: %s\nNova data de cadastro: ", temp.Data_Cadastro);
     char novaDataCadastro[20];
     scanf(" %[^\n]", novaDataCadastro);
     if (strcmp(novaDataCadastro, "-") != 0) {
-        strcpy(atual->paciente.Data_Cadastro, novaDataCadastro);
+        strcpy(temp.Data_Cadastro, novaDataCadastro);
     }
 
+    printf("\nConfirma a atualização com os seguintes dados? (s/n)\n");
+    imprimir_paciente(temp);
+    char confirmacaoFinal;
+    scanf(" %c", &confirmacaoFinal);
+
+    if (tolower(confirmacaoFinal) != 's') {
+        printf("Operação de atualização cancelada.\n");
+        return 0;
+    }
+
+    atual->paciente = temp;
     printf("Paciente atualizado com sucesso.\n");
-    imprimir_paciente(atual->paciente);
+    return 1;
 }
 
 // Libera toda a memória alocada para a lista de pacientes
@@ -284,7 +352,7 @@ void imprimir_cabecalho()
 void consultar_pelo_nome(ListaPacientes *lista) 
 {
     char nome[50];
-    printf("Digite o nome ou parte do nome do paciente: ");
+    printf("Digite o nome do paciente: ");
     scanf(" %[^\n]", nome); 
     limparQuebraLinha(nome);
 
@@ -300,7 +368,7 @@ void consultar_pelo_nome(ListaPacientes *lista)
         char paciente_minusculo[50];
         para_minusculo(atual->paciente.Nome, paciente_minusculo);
 
-        if (strstr(paciente_minusculo, nome_minusculo) != NULL) 
+        if (strncmp(paciente_minusculo, nome_minusculo, strlen(nome_minusculo)) == 0) 
         {
             imprimir_paciente(atual->paciente);
             encontrou = 1;
@@ -317,7 +385,7 @@ void consultar_pelo_nome(ListaPacientes *lista)
 void consultar_pelo_cpf(ListaPacientes *lista) 
 {
     char cpf[15];
-    printf("Digite o CPF do paciente: ");
+    printf("Digite o CPF ou prefixo do CPF do paciente: ");
     scanf(" %[^\n]", cpf); 
     limparQuebraLinha(cpf);
 
@@ -327,17 +395,16 @@ void consultar_pelo_cpf(ListaPacientes *lista)
     Node *atual = lista->head;
     while (atual != NULL) 
     {
-        if (strcmp(atual->paciente.CPF, cpf) == 0) 
+        if (strncmp(atual->paciente.CPF, cpf, strlen(cpf)) == 0) 
         {
             imprimir_paciente(atual->paciente);
             encontrou = 1;
-            break;
         }
         atual = atual->next;
     }
 
     if (!encontrou) {
-        printf("Nenhum paciente encontrado com esse CPF.\n");
+        printf("Nenhum paciente encontrado com esse CPF ou prefixo.\n");
     }
 }
 
@@ -439,58 +506,45 @@ void iniciar_sistema() {
             case '1':
                 consultar_pacientes(&lista);
                 break;
-
             case '2': {
                 int id;
                 printf("Digite o ID do paciente a ser atualizado: ");
                 scanf("%d", &id);
-
-                Node *atual = lista.head;
-                while (atual != NULL && atual->paciente.ID != id) {
-                    atual = atual->next;
+                if (atualizar_paciente(&lista, id)) {
+                    salvar_dados(&lista);
                 }
-
-                if (atual == NULL) {
-                    printf("Paciente com ID %d não encontrado.\n", id);
-                } else {
-                    atualizar_paciente(&lista, atual->paciente);
+                break;
+            }
+            case '3': {
+                int id;
+                printf("Digite o ID do paciente a ser removido: ");
+                scanf("%d", &id);
+                
+                if (remover_paciente(&lista, id)) {
                     salvar_dados(&lista);
                 }
                 break;
             }
 
-            case '3': {
-                int id;
-                printf("Digite o ID do paciente a ser removido: ");
-                scanf("%d", &id);
-                remover_paciente(&lista, id);
-                salvar_dados(&lista);
-                break;
-            }
-
             case '4':
-                inserir_paciente(&lista);
-                salvar_dados(&lista);
+                if (inserir_paciente(&lista)) {
+                    salvar_dados(&lista);
+                }
+                
                 break;
-
             case '5':
                 imprimir_todos_pacientes(&lista);
                 printf("\nPressione ENTER para continuar...");
                 getchar();
                 getchar();
                 break;
-
             case 'Q':
             case 'q':
                 printf("Encerrando o sistema...\n");
                 break;
-
             default:
                 printf("Opção inválida. Tente novamente.\n");
         }
-
     } while (opcao != 'Q' && opcao != 'q');
-
-    // Libera memória antes de sair
     free_lista(&lista);
 }

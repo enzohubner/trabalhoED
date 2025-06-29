@@ -1,8 +1,7 @@
 #ifndef BDPACIENTE_H
 #define BDPACIENTE_H
 
-#define MAX_pacientes 1000
-
+// Definições completas das estruturas
 typedef struct {
     int ID;
     char CPF[15];
@@ -21,43 +20,34 @@ typedef struct {
     int quantidade;
 } ListaPacientes;
 
-void imprimir_cabecalho();
-
+//Utilitarias
 void limparQuebraLinha(char *str);
+void para_minusculo(char *str, char *resultado);
+int valida_cpf(char *cpf);
 
-//void guardar_dados (BDPaciente *bd);
+//Manipulação de Pacientes
+void inserir_paciente_na_lista(ListaPacientes *lista, Paciente p);
+int obter_proximo_id(ListaPacientes *lista);
+int inserir_paciente(ListaPacientes *lista); 
+int remover_paciente(ListaPacientes *lista, int id); 
+int atualizar_paciente(ListaPacientes *lista, int id);
+void free_lista(ListaPacientes *lista);
 
-//void imprimir_paciente(Paciente p);
-
-//void consultar_pacientes(BDPaciente *bd);
-
-//void consultar_pelo_cpf(BDPaciente *bd);
-
-//void consultar_pelo_nome(BDPaciente *bd);
-
-//void imprimir_todos_pacientes(BDPaciente *bd);sa
-void iniciar_sistema();
-
-void salvar_dados(ListaPacientes *lista);
-
-void guardar_dados(ListaPacientes *lista);
-
-void consultar_pacientes(ListaPacientes *lista);
-
-void consultar_pelo_cpf(ListaPacientes *lista);
-
-void consultar_pelo_nome(ListaPacientes *lista);
-
+//Funcoes de exibição
+void imprimir_paciente(Paciente p);
+void imprimir_cabecalho();
 void imprimir_todos_pacientes(ListaPacientes *lista);
 
-void imprimir_paciente(Paciente p);
+//Funções de consulta
+void consultar_pelo_nome(ListaPacientes *lista);
+void consultar_pelo_cpf(ListaPacientes *lista);
+void consultar_pacientes(ListaPacientes *lista);
 
-void inserir_paciente(ListaPacientes *lista);
+//Manipulação de dados no arquivo
+void salvar_dados(ListaPacientes *lista);
+void guardar_dados(ListaPacientes *lista);
 
-void remover_paciente(ListaPacientes *lista, int id);
-
-void atualizar_paciente(ListaPacientes *lista, Paciente p);
-
-void free_lista(ListaPacientes *lista);
+//Função principal do sistema
+void iniciar_sistema();
 
 #endif
